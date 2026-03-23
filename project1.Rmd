@@ -1,0 +1,156 @@
+---
+title: "Project 1: Descriptive Analysis of CollegeScores4yr Dataset"
+author: "Aubin Darcy Irakoze"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+# Introduction
+
+
+Choosing a college is stressful enough without worrying about things like how much it costs, how likely you are to graduate, or how much debt you'll be stuck with after. I wanted to use this project to dig into some real data about 4-year colleges and actually see how bad (or good) things really are.
+The dataset I’m using is the **CollegeScores4yr** dataset from the Lock5Data collection. It contains information on things like tuition, graduation rates, student debt, enrollment, and federal aid. Since I’m at the stage of life where everyone is either in college, trying to transfer, or figuring out loans, I thought it would be worth actually looking at this with stats.
+
+For this project, I’ll be answering **10 simple but real-life questions** using descriptive statistics like means, standard deviations, histograms, boxplots, barplots, and correlations.
+
+---
+
+# Data Preparation
+
+```{r}
+library(tidyverse)
+
+data_link <- "https://www.lock5stat.com/datasets3e/CollegeScores4yr.csv"
+college <- read_csv(data_link)
+
+colnames(college)
+```
+
+---
+
+# Question 1 - Do private colleges really charge way more than public ones on average?
+
+```{r}
+college %>%
+  group_by(Control) %>%
+  summarise(mean_tuition = mean(TuitionFTE, na.rm = TRUE))
+
+ggplot(college, aes(x = Control, y = TuitionFTE)) +
+  geom_boxplot() +
+  labs(title = "Tuition: Private vs Public Colleges", x = "Type", y = "Tuition per Full-Time Equivalent")
+```
+
+Private colleges seem to charge a lot more, but the range also varies depending on the school. Definitely confirms what most people already assume.
+
+---
+
+# Question 2 - How many schools have graduation rates below 50%?
+
+```{r}
+ggplot(college, aes(x = CompRate)) +
+  geom_histogram(binwidth = 5, color = "black", fill = "skyblue") +
+  geom_vline(xintercept = 50, color = "red", linetype = "dashed") +
+  labs(title = "Graduation Rates Distribution", x = "Graduation Rate (%)", y = "Number of Colleges")
+```
+
+A surprising number of schools have graduation rates under 50%, which makes you wonder if people are dropping out due to costs, academics, or other reasons.
+
+---
+
+# Question 3 - What is the standard deviation of average net price?
+
+```{r}
+sd(college$NetPrice, na.rm = TRUE)
+```
+
+There’s a lot of variation in net prices. It shows that the sticker price is not always the price people actually end up paying.
+
+---
+
+# Question 4 - How uneven is the admission rate?
+
+```{r}
+ggplot(college, aes(x = AdmitRate)) +
+  geom_histogram(binwidth = 0.05, color = "black", fill = "lightgreen") +
+  labs(title = "Distribution of Admission Rates", x = "Admission Rate", y = "Number of Colleges")
+
+ggplot(college, aes(y = AdmitRate)) +
+  geom_boxplot() +
+  labs(title = "Boxplot of Admission Rates")
+```
+
+Admission rates are all over the place. Some schools take almost everybody, while others are super selective. No surprise there, but it’s cool to see it visually.
+
+---
+
+# Question 5 - What is the variance of admission rates?
+
+```{r}
+var(college$AdmitRate, na.rm = TRUE)
+```
+
+The variance confirms how spread out admission rates are. Schools are definitely not following one common pattern.
+
+---
+
+# Question 6 - Does higher tuition lead to higher graduation rates?
+
+```{r}
+ggplot(college, aes(x = TuitionFTE, y = CompRate)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Tuition vs Graduation Rate", x = "Tuition per FTE", y = "Graduation Rate (%)")
+
+cor(college$TuitionFTE, college$CompRate, use = "complete.obs")
+```
+
+There’s a small positive trend, but it’s not super strong. Paying more might help, but it doesn’t guarantee a diploma.
+
+---
+
+# Question 7 - What is the proportion of private vs public colleges?
+
+```{r}
+ggplot(college, aes(x = Control)) +
+  geom_bar() +
+  labs(title = "Private vs Public Colleges", x = "Type of Institution", y = "Count")
+```
+
+There are definitely more public colleges, which makes sense since state schools are everywhere.
+
+---
+
+# Question 8 - What is the average percentage of students receiving federal aid (Pell Grants)?
+
+```{r}
+mean(college$Pell, na.rm = TRUE)
+```
+
+On average, around **32%** of students are receiving Pell Grants, which tells you a lot about how many students need financial help.
+
+---
+
+# Question 9 - What's the distribution of student enrollment sizes?
+
+```{r}
+ggplot(college, aes(x = Enrollment)) +
+  geom_histogram(binwidth = 5000, color = "black", fill = "purple") +
+  labs(title = "Distribution of Enrollment Sizes", x = "Enrollment", y = "Number of Colleges")
+```
+
+Most colleges are actually on the smaller side, but a few big universities boost the average a lot.
+
+---
+
+# Question 10 - Do colleges with higher graduation rates also have less debt?
+
+```{r}
+ggplot(college, aes(x = CompRate, y = Debt)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Graduation Rate vs Median Debt", x = "Graduation Rate (%)", y = "Median Debt ($)")
+
+cor(college$CompRate, college$Debt, use = "complete.obs")
+```
+
+Interestingly, schools with better graduation rates tend to have students with slightly less debt. It might be because they actually finish faster or manage costs better.
